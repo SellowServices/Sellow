@@ -4,8 +4,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sellow_HUB", "Sellow_HUB\Sellow_HUB.vcxproj", "{6EBCA651-D869-47B9-9BC2-D36AC27A528C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F3495E8D-4BF5-49EC-B310-430EAC4B175D} = {F3495E8D-4BF5-49EC-B310-430EAC4B175D}
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SellowConnectService", "SellowConnectService\SellowConnectService.csproj", "{F3495E8D-4BF5-49EC-B310-430EAC4B175D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SellowConnectService", "SellowConnectService\SellowConnectService.csproj", "{F3495E8D-4BF5-49EC-B310-430EAC4B175D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
