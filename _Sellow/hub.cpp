@@ -6,6 +6,13 @@
 #include <QString>
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <QDir>
+#include <QFile>
+#include <QIODevice>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QSettings>
+
 #include <windows.h>
 #include <tlhelp32.h>
 #include <vector>
@@ -15,7 +22,12 @@ Hub::Hub(QWidget *parent)
     , ui(new Ui::Hub)
 {
     ui->setupUi(this);
-    loadActiveApplications(); // Load active applications on startup
+
+    // Check the folder structure on startup
+    ensureFolderStructure();
+
+    // Scan the Trainers folder and load trainer information into the Library section
+    loadTrainerLibrary();
 }
 
 Hub::~Hub()
@@ -23,121 +35,129 @@ Hub::~Hub()
     delete ui;
 }
 
-void Hub::loadActiveApplications() {
-    // Clear existing buttons in the layout
-    QLayoutItem* item;
-    while ((item = ui->verticalLayout->takeAt(0))) {
-        delete item->widget();
-        delete item;
-    }
+// Main function to check and create folder structure
+void Hub::ensureFolderStructure() {
+    ensureFolder("/Data");
+    ensureFolder("/Data/Trainers");
+    ensureFolder("/Data/Trainers/Mods");
+    // ensureConfigFile("/Data/Trainers/Config.cfg");
+}
 
-    // Set layout spacing and margins
-    ui->verticalLayout->setContentsMargins(0, 3, 3, 3);  // (left, top, right, bottom)
-    ui->verticalLayout->setSpacing(20);
-
-    // Vector to hold window titles
-    std::vector<std::string> windowTitles;
-
-    // Enumerate windows
-    EnumWindows(EnumWindowsProc, reinterpret_cast<LPARAM>(&windowTitles));
-
-    // Add spacing of 5 pixels
-    ui->verticalLayout->setSpacing(50); // Set spacing between buttons
-
-    // Create buttons for each window
-    for (const auto& title : windowTitles) {
-        if (!title.empty()) {
-            QPushButton *button = createAppButton(title);
-            ui->verticalLayout->addWidget(button);
-            ui->verticalLayout->addSpacing(20);
+// Ensure a folder exists or create it
+void Hub::ensureFolder(const QString &folderPath) {
+    QString fullPath = QDir::currentPath() + folderPath;
+    if (!QDir(fullPath).exists()) {
+        if (QDir().mkpath(fullPath)) {
+            // QMessageBox::information(this, tr("Folder Created"), tr("%1 was missing and has been created.").arg(folderPath));
+        } else {
+            // QMessageBox::critical(this, tr("Error"), tr("Failed to create %1.").arg(folderPath));
         }
     }
-    ui->verticalLayout->update();
 }
 
-QPushButton* Hub::createAppButton(const std::string &title) {
-    QPushButton *button = new QPushButton(QString::fromStdString(title), this);
-
-    // Set button style for Discord-like theme
-    QString buttonColor = "#40444B"; // Dark gray color
-    QString textColor = "#FFFFFF"; // White text for contrast
-
-    button->setStyleSheet(QString("QPushButton { background-color: %1; color: %2; height: 15px;}"
-                                  "QPushButton:hover { background-color: #5865F2;}")
-                              .arg(buttonColor, textColor));
-
-    // Set the button to fill the available width
-    button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    button->setMinimumHeight(15); // Set a more prominent minimum height
-
-    // Connect the button click event
-    connect(button, &QPushButton::clicked, [this, title](){ onAppButtonClicked(title); });
-
-    return button;
-}
-
-BOOL CALLBACK Hub::EnumWindowsProc(HWND hWnd, LPARAM lParam) // Define as static member
-{
-    // Get the vector of window titles from LPARAM
-    std::vector<std::string>* windowTitles = reinterpret_cast<std::vector<std::string>*>(lParam);
-    int length = GetWindowTextLengthA(hWnd);
-
-    if (length > 0) {
-        std::string windowTitle(length + 1, '\0');
-        GetWindowTextA(hWnd, &windowTitle[0], length + 1);
-        windowTitles->push_back(windowTitle); // Add title to the vector
+// Ensure the config file exists, create it with default content if not
+void Hub::ensureConfigFile(const QString &filePath) {
+    QString fullPath = QDir::currentPath() + filePath;
+    if (!QFile::exists(fullPath)) {
+        QFile configFile(fullPath);
+        if (configFile.open(QIODevice::WriteOnly)) {
+            configFile.write("# Default config\n");
+            configFile.close();
+            // QMessageBox::information(this, tr("Config Created"), tr("%1 was missing and has been created.").arg(filePath));
+        } else {
+            // QMessageBox::critical(this, tr("Error"), tr("Failed to create %1.").arg(filePath));
+        }
     }
-
-    return TRUE; // Continue enumeration
 }
 
-void Hub::onAppButtonClicked(const std::string &appTitle) {
-    // Handle button click for the corresponding application
-    QMessageBox::information(this, tr("Selected Application"), tr("You selected: %1").arg(QString::fromStdString(appTitle)));
+// Scan the Trainers folder and load trainers into the library view
+void Hub::loadTrainerLibrary() {
+    QString trainersPath = QDir::currentPath() + "/Data/Trainers";
+    QDir trainersDir(trainersPath);
+    QStringList trainerFolders = trainersDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
-    windowTitle = appTitle;
-}
-
-// String
-
-std::wstring stringToWString(const std::string &str) {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-    return converter.from_bytes(str);
-}
-
-const wchar_t* stringToWCharPtr(const std::string &str) {
-    static std::wstring wstr = stringToWString(str); // Make sure wstr stays in scope
-    return wstr.c_str();
-}
-
-// String End
-
-void Hub::on_injectButton_clicked()
-{
-    QString dllPath = ui->fileLineEdit->text();
-    if (dllPath.isEmpty()) {
-        QMessageBox::warning(this, tr("Warning"), tr("Please select a DLL file first!"));
+    if (trainerFolders.isEmpty()) {
+        QMessageBox::information(this, tr("No Trainers"), tr("No trainers found in the /Data/Trainers folder."));
         return;
     }
 
-    dllPath = QDir::toNativeSeparators(dllPath);
+    // Clear the library widget before populating
+    ui->libraryListWidget->clear();
 
-    // This can be modified to work with the selected button's title if necessary
-    std::wstring dllName = dllPath.toStdWString();
-    const wchar_t* thisWindowTitle = stringToWCharPtr(windowTitle);
+    // Loop through each trainer folder
+    for (const QString &trainerFolder : trainerFolders) {
+        QString trainerFullPath = trainersPath + "/" + trainerFolder;
 
-    InjectorTool injector(dllName.c_str(), thisWindowTitle);
-    if (!injector.inject()) {
-        QMessageBox::critical(this, tr("Error"), tr("DLL injection failed! Please check the DLL and the target application."));
-    } else {
-        QMessageBox::information(this, tr("Success"), tr("DLL injected successfully!"));
+        // Create a QSettings object for the trainer's Config.ini file
+        QSettings settings(trainerFullPath + "/Config.ini", QSettings::IniFormat);
+
+        // Check if the required configuration keys exist
+        if (!settings.contains("General/appName")) {
+            QMessageBox::information(nullptr, "Test", "The key 'General/appName' does not exist in " + trainerFolder + ".");
+            continue;  // Skip this trainer if the appName doesn't exist
+        }
+
+        // Retrieve application information from the config file
+        QString appName = settings.value("General/appName").toString();
+        QString version = settings.value("General/version").toString();
+        QString defaultLanguage = settings.value("General/defaultLanguage").toString();
+
+        // Create an item for the trainer
+        QListWidgetItem *trainerItem = new QListWidgetItem(trainerFolder);
+        trainerItem->setText("Trainer: " + appName + "\nVersion: " + version);
+        trainerItem->setSizeHint(QSize(200, 100));
+        ui->libraryListWidget->addItem(trainerItem);
+
+        // Optionally, load mods here in the future
+        // loadModsForTrainer(trainerFullPath);
     }
 }
 
-void Hub::on_fileSelectButton_clicked()
+// Future function for loading mods (to be implemented later)
+void Hub::loadModsForTrainer(const QString &trainerFullPath) {
+    // Example of how you might structure this in the future
+    QDir modsDir(trainerFullPath + "/Mods");
+    QStringList modFolders = modsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+
+    // Loop through each mod folder and process
+    for (const QString &modFolder : modFolders) {
+        QString modFullPath = trainerFullPath + "/Mods/" + modFolder;
+
+        // Example: Check for a config file in each mod
+        QString configFilePath = modFullPath + "/Config.cfg";
+        bool hasConfig = QFile::exists(configFilePath);
+
+        // Create a list item for each mod
+        QListWidgetItem *modItem = new QListWidgetItem(modFolder);
+        QString status = hasConfig ? "Config: Found" : "Config: Missing";
+        modItem->setText("Mod: " + modFolder + "\n" + status);
+        modItem->setSizeHint(QSize(200, 100));
+
+        // Add the item to the list widget for mods (if you're adding a separate widget for mods)
+        // ui->modListWidget->addItem(modItem);
+    }
+}
+
+void Hub::on_libraryButton_clicked()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Select DLL File"), "", tr("DLL Files (*.dll);;All Files (*)"));
-    if (!fileName.isEmpty()) {
-        ui->fileLineEdit->setText(fileName);
-    }
+    ui->stackedWidget->setCurrentIndex(0);
 }
+
+
+void Hub::on_shopButton_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(1);
+}
+
+
+void Hub::on_settingsButton_clicked()
+{
+    ui->stackedWidget->setCurrentIndex(2);
+}
+
+
+void Hub::on_libraryLaunch_clicked()
+{
+
+}
+
