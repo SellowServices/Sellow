@@ -23,10 +23,10 @@ Hub::Hub(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Check the folder structure on startup
-    ensureFolderStructure();
+    connect(ui->trainerListWidget, &QListWidget::itemClicked, this, &Hub::onTrainerItemClicked);
+    connect(ui->libraryListWidget, &QListWidget::itemClicked, this, &Hub::onLibraryItemClicked);
 
-    // Scan the Trainers folder and load trainer information into the Library section
+    ensureFolderStructure();
     loadTrainerLibrary();
 }
 
@@ -35,11 +35,10 @@ Hub::~Hub()
     delete ui;
 }
 
-// Main function to check and create folder structure
 void Hub::ensureFolderStructure() {
     ensureFolder("/Data");
     ensureFolder("/Data/Trainers");
-    ensureFolder("/Data/Trainers/Mods");
+
     // ensureConfigFile("/Data/Trainers/Config.cfg");
 }
 
@@ -48,6 +47,7 @@ void Hub::ensureFolder(const QString &folderPath) {
     QString fullPath = QDir::currentPath() + folderPath;
     if (!QDir(fullPath).exists()) {
         if (QDir().mkpath(fullPath)) {
+            QMessageBox::information(this, tr("Folder Created"), folderPath);
             // QMessageBox::information(this, tr("Folder Created"), tr("%1 was missing and has been created.").arg(folderPath));
         } else {
             // QMessageBox::critical(this, tr("Error"), tr("Failed to create %1.").arg(folderPath));
@@ -55,19 +55,8 @@ void Hub::ensureFolder(const QString &folderPath) {
     }
 }
 
-// Ensure the config file exists, create it with default content if not
-void Hub::ensureConfigFile(const QString &filePath) {
-    QString fullPath = QDir::currentPath() + filePath;
-    if (!QFile::exists(fullPath)) {
-        QFile configFile(fullPath);
-        if (configFile.open(QIODevice::WriteOnly)) {
-            configFile.write("# Default config\n");
-            configFile.close();
-            // QMessageBox::information(this, tr("Config Created"), tr("%1 was missing and has been created.").arg(filePath));
-        } else {
-            // QMessageBox::critical(this, tr("Error"), tr("Failed to create %1.").arg(filePath));
-        }
-    }
+void Hub::loadTrainerShop() {
+
 }
 
 // Scan the Trainers folder and load trainers into the library view
@@ -81,60 +70,63 @@ void Hub::loadTrainerLibrary() {
         return;
     }
 
-    // Clear the library widget before populating
     ui->libraryListWidget->clear();
 
-    // Loop through each trainer folder
     for (const QString &trainerFolder : trainerFolders) {
         QString trainerFullPath = trainersPath + "/" + trainerFolder;
+        QString configFilePath = trainerFullPath + "/Config.ini";
 
-        // Create a QSettings object for the trainer's Config.ini file
-        QSettings settings(trainerFullPath + "/Config.ini", QSettings::IniFormat);
+        if (!QFile::exists(configFilePath)) {
+            qDebug() << "Config file missing for:" << trainerFolder;
+            continue;  // Skip if Config.ini file doesn't exist
+        }
 
-        // Check if the required configuration keys exist
-        if (!settings.contains("General/appName")) {
-            QMessageBox::information(nullptr, "Test", "The key 'General/appName' does not exist in " + trainerFolder + ".");
-            continue;  // Skip this trainer if the appName doesn't exist
+        QSettings settings(configFilePath, QSettings::IniFormat);
+
+        gameConfigsPath = configFilePath;
+
+        qDebug() << "Loading config file from:" << configFilePath;
+        QStringList settingsKeys = settings.allKeys();
+        qDebug() << "Keys in config file:" << settingsKeys;
+
+        if (!settings.contains("AppName")) {
+            qDebug() << "AppName missing in Config.ini for:" << trainerFolder;
+            continue;  // Skip if 'AppName' under 'General' section is missing
         }
 
         // Retrieve application information from the config file
-        QString appName = settings.value("General/appName").toString();
-        QString version = settings.value("General/version").toString();
-        QString defaultLanguage = settings.value("General/defaultLanguage").toString();
+        QString appName = settings.value("AppName").toString();  // Updated key to match INI file
+        QString version = settings.value("Version").toString();  // Updated key to match INI file
+        QString defaultLanguage = settings.value("DefaultLanguage").toString();  // Updated key to match INI file
 
         // Create an item for the trainer
         QListWidgetItem *trainerItem = new QListWidgetItem(trainerFolder);
-        trainerItem->setText("Trainer: " + appName + "\nVersion: " + version);
+
+        QString iconPath = QString(":/Resources/Cover/" + appName + ".jpg").arg(trainerFolder);
+        QIcon trainerIcon(iconPath);
+
+        trainerItem->setIcon(trainerIcon);
+        trainerItem->setText(appName);
         trainerItem->setSizeHint(QSize(200, 100));
         ui->libraryListWidget->addItem(trainerItem);
-
-        // Optionally, load mods here in the future
-        // loadModsForTrainer(trainerFullPath);
     }
 }
 
-// Future function for loading mods (to be implemented later)
 void Hub::loadModsForTrainer(const QString &trainerFullPath) {
-    // Example of how you might structure this in the future
     QDir modsDir(trainerFullPath + "/Mods");
     QStringList modFolders = modsDir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 
-    // Loop through each mod folder and process
     for (const QString &modFolder : modFolders) {
         QString modFullPath = trainerFullPath + "/Mods/" + modFolder;
 
-        // Example: Check for a config file in each mod
-        QString configFilePath = modFullPath + "/Config.cfg";
+        QString configFilePath = modFullPath + "/Config.ini";
         bool hasConfig = QFile::exists(configFilePath);
 
-        // Create a list item for each mod
         QListWidgetItem *modItem = new QListWidgetItem(modFolder);
         QString status = hasConfig ? "Config: Found" : "Config: Missing";
         modItem->setText("Mod: " + modFolder + "\n" + status);
         modItem->setSizeHint(QSize(200, 100));
-
-        // Add the item to the list widget for mods (if you're adding a separate widget for mods)
-        // ui->modListWidget->addItem(modItem);
+        ui->modsListWidget->addItem(modItem);
     }
 }
 
@@ -150,14 +142,66 @@ void Hub::on_shopButton_clicked()
 }
 
 
+void Hub::onLibraryItemClicked(QListWidgetItem *item) { // Game Opened
+    ui->stackedWidget->setCurrentIndex(2);
+
+    QSettings settings(gameConfigsPath, QSettings::IniFormat);
+
+    if (settings.contains("Launcher/GameLauncher")) {
+        QString fileLocation = settings.value("Launcher/GameLauncher").toString();
+
+        ui->settingsGameLocation->setPlainText(fileLocation);
+    }
+    else {
+
+    }
+
+    ui->gamePreviewGameLabel->setText(item->text());
+}
+
 void Hub::on_settingsButton_clicked()
 {
-    ui->stackedWidget->setCurrentIndex(2);
+    ui->stackedWidget->setCurrentIndex(3);
+}
+
+void Hub::onTrainerItemClicked(QListWidgetItem *item) { // Store Trainer Opened
+    ui->stackedWidget->setCurrentIndex(4);
+
+   ui->downloadItemNameLabel->setText(item->text());
 }
 
 
-void Hub::on_libraryLaunch_clicked()
+void Hub::on_useSConnect_2_clicked(bool checked)
 {
+    ui->settingSellowUsername->setEnabled(checked);
+}
 
+
+void Hub::on_settingsLocateGame_clicked()
+{
+    QSettings settings(gameConfigsPath, QSettings::IniFormat);
+    QString fileName = QFileDialog::getOpenFileName(this, tr("Locate Game Executable"),
+                                                    QString(),
+                                                    tr("Executable Files (*.exe)"));
+
+    if (!fileName.isEmpty()) {
+        ui->settingsGameLocation->setPlainText(fileName);
+        settings.setValue("Launcher/GameLauncher", fileName);
+    } else {
+        // None selected
+    }
+}
+
+void Hub::on_gameLaunchButton_clicked()
+{
+    qDebug() << "Launching game!";
+    QSettings settings(gameConfigsPath, QSettings::IniFormat);
+    QString fileLocation = settings.value("Launcher/GameLauncher").toString();
+
+    if (!fileLocation.isEmpty()) {
+        ShellExecuteW(reinterpret_cast<HWND>(ui->gameLaunchButton->winId()), L"open", fileLocation.toStdWString().c_str(), NULL, NULL, SW_SHOWNORMAL);
+    } else {
+        qDebug() << "Game launcher path is empty!";
+    }
 }
 

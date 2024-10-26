@@ -4,5 +4,6 @@
         <file>Resources/Icons/Library.svg</file>
         <file>Resources/Icons/Settings.svg</file>
         <file>Resources/Icons/Trainer_Shop.svg</file>
+        <file>Resources/Cover/Metro Last Light.jpg</file>
     </qresource>
 </RCC>

@@ -201,7 +201,7 @@ build Sellow_autogen/timestamp Sellow_autogen/mocs_compilation.cpp | ${cmake_nin
 #############################################
 # Custom command for Sellow_autogen\EWIEGA46WW\qrc_Resources.cpp
 
-build Sellow_autogen/EWIEGA46WW/qrc_Resources.cpp | ${cmake_ninja_workdir}Sellow_autogen/EWIEGA46WW/qrc_Resources.cpp: CUSTOM_COMMAND D$:/Sellow/_Sellow/Resources.qrc CMakeFiles/Sellow_autogen.dir/AutoRcc_Resources_EWIEGA46WW_Info.json D$:/Sellow/_Sellow/Resources/Icons/icon.ico D$:/Sellow/_Sellow/Resources/Icons/Library.svg D$:/Sellow/_Sellow/Resources/Icons/Settings.svg D$:/Sellow/_Sellow/Resources/Icons/Trainer_Shop.svg C$:/Qt/6.8.0/mingw_64/bin/rcc.exe C$:/Qt/6.8.0/mingw_64/bin/rcc.exe || Sellow_autogen Sellow_autogen_timestamp_deps
+build Sellow_autogen/EWIEGA46WW/qrc_Resources.cpp | ${cmake_ninja_workdir}Sellow_autogen/EWIEGA46WW/qrc_Resources.cpp: CUSTOM_COMMAND D$:/Sellow/_Sellow/Resources.qrc CMakeFiles/Sellow_autogen.dir/AutoRcc_Resources_EWIEGA46WW_Info.json D$:/Sellow/_Sellow/Resources/Cover/Metro$ Last$ Light.jpg D$:/Sellow/_Sellow/Resources/Icons/icon.ico D$:/Sellow/_Sellow/Resources/Icons/Library.svg D$:/Sellow/_Sellow/Resources/Icons/Settings.svg D$:/Sellow/_Sellow/Resources/Icons/Trainer_Shop.svg C$:/Qt/6.8.0/mingw_64/bin/rcc.exe C$:/Qt/6.8.0/mingw_64/bin/rcc.exe || Sellow_autogen Sellow_autogen_timestamp_deps
   COMMAND = C:\Windows\system32\cmd.exe /C "cd /D D:\Sellow\_Sellow\build\Desktop_Qt_6_8_0_MinGW_64_bit-Debug && C:\Qt\Tools\CMake_64\bin\cmake.exe -E cmake_autorcc D:/Sellow/_Sellow/build/Desktop_Qt_6_8_0_MinGW_64_bit-Debug/CMakeFiles/Sellow_autogen.dir/AutoRcc_Resources_EWIEGA46WW_Info.json Debug"
   DESC = Automatic RCC for Resources.qrc
   restat = 1
