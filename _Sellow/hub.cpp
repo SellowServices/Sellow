@@ -12,6 +12,7 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QSettings>
+#include <QThread>
 
 #include <windows.h>
 #include <tlhelp32.h>
@@ -192,16 +193,45 @@ void Hub::on_settingsLocateGame_clicked()
     }
 }
 
-void Hub::on_gameLaunchButton_clicked()
-{
+void Hub::on_gameLaunchButton_clicked() {
     qDebug() << "Launching game!";
     QSettings settings(gameConfigsPath, QSettings::IniFormat);
     QString fileLocation = settings.value("Launcher/GameLauncher").toString();
+    QString gameTrainerDLL = settings.value("Launcher/GameTrainerDLL").toString();
+    QString exactGameTitle = settings.value("Launcher/ExactGameTitle").toString();
 
     if (!fileLocation.isEmpty()) {
-        ShellExecuteW(reinterpret_cast<HWND>(ui->gameLaunchButton->winId()), L"open", fileLocation.toStdWString().c_str(), NULL, NULL, SW_SHOWNORMAL);
+        STARTUPINFO si = { sizeof(si) };
+        PROCESS_INFORMATION pi;
+
+        if (CreateProcess(fileLocation.toStdWString().c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+            qDebug() << "Game launched successfully!";
+
+            // TODO: Inject the game trainers DLL after setup
+
+            // QThread::sleep(15);
+
+            // if (!gameTrainerDLL.isEmpty() && QFile::exists(gameTrainerDLL)) {
+            //     std::wstring dllPath = gameTrainerDLL.toStdWString();
+            //     std::wstring windowTitle = exactGameTitle.toStdWString();
+
+            //     InjectorTool injector(dllPath.c_str(), windowTitle.c_str());
+
+            //     if (injector.inject()) {
+            //         qDebug() << "DLL injection succeeded!";
+            //     } else {
+            //         qDebug() << "DLL injection failed!";
+            //     }
+            }
+
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+
+        } else {
+            DWORD errorCode = GetLastError();
+            qDebug() << "Failed to launch game! Error code:" << errorCode;
+        }
     } else {
         qDebug() << "Game launcher path is empty!";
     }
 }
-

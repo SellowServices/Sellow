@@ -1,45 +1,42 @@
 #include "injectortool.h"
 #include <stdexcept> // For std::runtime_error
 #include <sys/stat.h> // For _stat
+#include <qDebug>
 
 InjectorTool::InjectorTool(const wchar_t* dll_name, const wchar_t* window_title)
     : dll_name(dll_name), window_title(window_title), proc_id(0), h_process(nullptr) {}
 
 bool InjectorTool::inject() {
-    // Check if the DLL exists
-    if (!DLLExists(dll_name)) {
-        error(L"DLLExists", L"DLL doesn't exist!");
-        return false; // Indicate failure
+    try {
+        if (!DLLExists(dll_name)) {
+            error(L"DLLExists", L"DLL doesn't exist!");
+            return false;
+        }
+
+        if (!GetFullPathNameW(dll_name, MAX_PATH, dll_path, nullptr)) {
+            error(L"GetFullPath", L"Failed to get full path of DLL!");
+            return false;
+        }
+
+        getProcID();
+        if (proc_id == 0) {
+            error(L"GetProcessID", L"Failed to get process ID!");
+            return false;
+        }
+
+        openProcess();
+        allocateMemory();
+        writeMemory();
+        createRemoteThread();
+
+        cleanup();
+        return true;
+
+    } catch (const std::exception& e) {
+        qDebug() << "Exception in inject(): " << e.what();
+        cleanup();
+        return false;
     }
-
-    // Get the full path of the DLL
-    if (!GetFullPathNameW(dll_name, MAX_PATH, dll_path, nullptr)) {
-        error(L"GetFullPath", L"Failed to get full path of DLL!");
-        return false; // Indicate failure
-    }
-
-    // Get the process ID of the target window
-    getProcID();
-    if (proc_id == 0) {
-        error(L"GetProcessID", L"Failed to get process ID!");
-        return false; // Indicate failure
-    }
-
-    // Open the target process
-    openProcess();
-
-    // Allocate memory in the target process
-    allocateMemory();
-
-    // Write the DLL path to the allocated memory
-    writeMemory();
-
-    // Create a remote thread in the target process to load the DLL
-    createRemoteThread();
-
-    // Cleanup resources
-    cleanup();
-    return true; // Indicate success
 }
 
 void InjectorTool::getProcID() {

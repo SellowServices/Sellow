@@ -272,7 +272,8 @@
 			"MU",
 			"EWIEGA46WW/moc_injectortool.cpp",
 			null
-		]
+		],
+		[ "D:/Sellow/_Sellow/store.h", "MU", "EWIEGA46WW/moc_store.cpp", null ]
 	],
 	"HEADER_EXTENSIONS" : [ "h", "hh", "h++", "hm", "hpp", "hxx", "in", "txx" ],
 	"INCLUDE_DIR" : "D:/Sellow/_Sellow/build/Desktop_Qt_6_8_0_MinGW_64_bit-Debug/Sellow_autogen/include",
@@ -347,7 +348,8 @@
 	[
 		[ "D:/Sellow/_Sellow/hub.cpp", "MU", null ],
 		[ "D:/Sellow/_Sellow/injectortool.cpp", "MU", null ],
-		[ "D:/Sellow/_Sellow/main.cpp", "MU", null ]
+		[ "D:/Sellow/_Sellow/main.cpp", "MU", null ],
+		[ "D:/Sellow/_Sellow/store.cpp", "MU", null ]
 	],
 	"UIC_OPTIONS" : [],
 	"UIC_SEARCH_PATHS" : [],

@@ -7,7 +7,7 @@
 				{
 					"build" : ".",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.-Debug-1962e4ca79309c58c62d.json",
+					"jsonFile" : "directory-.-Debug-53e989153223bb9d5875.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.16"
@@ -44,7 +44,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "Sellow::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Sellow-Debug-72024b26a115a1d93935.json",
+					"jsonFile" : "target-Sellow-Debug-88656ea0da8b661f5f80.json",
 					"name" : "Sellow",
 					"projectIndex" : 0
 				},

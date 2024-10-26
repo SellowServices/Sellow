@@ -25,6 +25,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         injectortool.h injectortool.cpp
         Resources.qrc
+        store.h store.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET Sellow APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
