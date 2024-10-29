@@ -8,4 +8,4 @@ The Sellow Project is a framework designed to extend the functionality of games 
  
  **Sellow Mod Adaptor**: A adaptor that allows for creating, editing, uploading, & general playing.
  
- **Sellow Connect**: A multiplayer core for hosting, joining servers/friends, and game replication.
+ [**Sellow Connect**: A multiplayer core for hosting, joining servers/friends, and game replication.](https://github.com/SellowServices/Sellow-Connect)
