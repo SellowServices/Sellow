@@ -1,5 +1,5 @@
 # Sellow Project
-The Sellow Project is a framework designed to extend the functionality of games single-player games. The project consists of three core components, each with a specific role in providing the best experience to the user.
+The Sellow Project is a framework designed to extend the functionality of single-player games. The project consists of three core components, each with a specific role in providing the best experience to the user.
 
 ## Components:
  **Sellow HUB**: A HUB to install game trainers & game mods.
